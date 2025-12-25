@@ -7,11 +7,9 @@ st.set_page_config(page_title="Smart BMI Calculator", page_icon="⚖️", layout
 # 2. CSS ANTI-DARK MODE & STYLING
 st.markdown("""
     <style>
-    /* Dasar Putih & Teks Hitam */
     .stApp { background-color: white !important; }
     h1, h2, h3, h4, p, span, label, li, div { color: #000000 !important; }
 
-    /* Container Header */
     .header-container {
         display: flex;
         align-items: center;
@@ -27,7 +25,6 @@ st.markdown("""
 
     [data-testid="stSidebar"] { display: none; }
     
-    /* Tombol Biru */
     .stButton>button {
         width: 100%;
         border-radius: 10px;
@@ -66,8 +63,8 @@ st.divider()
 if selected == "Input Data":
     st.markdown("<h3 style='text-align: center;'>📝 Form Input Data</h3>", unsafe_allow_html=True)
     
-    berat = st.number_input("Berat Badan (kg)", min_value=1.0, value=1.0, step=0.1)
-    tinggi = st.number_input("Tinggi Badan (cm)", min_value=1.0, value=1.0, step=0.1)
+    berat = st.number_input("Berat Badan (kg)", min_value=1.0, value=60.0, step=0.1)
+    tinggi = st.number_input("Tinggi Badan (cm)", min_value=1.0, value=165.0, step=0.1)
     gender = st.selectbox("Jenis Kelamin", ["Laki-laki", "Perempuan"])
     
     if st.button("Hitung Sekarang ✨"):
@@ -87,6 +84,10 @@ elif selected == "Hasil Perhitungan":
         tinggi_m = st.session_state.tinggi / 100
         bmi = st.session_state.berat / (tinggi_m ** 2)
         
+        # Hitung Batas Berat Ideal (BMI 18.5 - 24.9)
+        berat_ideal_min = 18.5 * (tinggi_m ** 2)
+        berat_ideal_max = 24.9 * (tinggi_m ** 2)
+        
         # Display Skor BMI
         st.markdown(f"""
             <div style="padding:20px; border-radius:15px; background:#ffffff; text-align:center; border:1px solid #eee; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px;">
@@ -95,33 +96,39 @@ elif selected == "Hasil Perhitungan":
             </div>
         """, unsafe_allow_html=True)
 
-        # Logika Kategori, Peringatan, Risiko, dan Tips
+        # Logika Kategori & Saran Berat
+        label_risiko = "⚠️ Risiko Kesehatan"
+        
         if bmi < 18.5:
             kat = "Kurus (Underweight)"
-            st.warning("⚠️ **Peringatan:** Berat badan Anda di bawah angka ideal. Disarankan untuk menambah asupan nutrisi dan konsultasi medis.")
+            selisih = berat_ideal_min - st.session_state.berat
+            st.warning(f"⚠️ **Target:** Anda perlu menaikkan berat badan sekitar **{selisih:.1f} kg** untuk mencapai berat ideal ({berat_ideal_min:.1f} kg).")
             risiko = ["Kekurangan nutrisi", "Sistem imun lemah", "Anemia", "Kepadatan tulang rendah"]
             tips = ["Makan porsi kecil tapi sering", "Tambah asupan protein", "Pilih camilan padat kalori", "Olahraga angkat beban"]
             color_bar = 0.2
             
         elif 18.5 <= bmi < 25:
             kat = "Normal (Ideal)"
-            st.success("🌟 **Bagus!** Berat badan Anda berada dalam rentang ideal. Tetap pertahankan gaya hidup sehat!")
-            risiko = ["Risiko penyakit rendah", "Tekanan darah stabil", "Jantung sehat", "Metabolisme lancar"]
+            st.success(f"🌟 **Hebat!** Berat badan Anda sudah ideal. Pertahankan di rentang **{berat_ideal_min:.1f} kg - {berat_ideal_max:.1f} kg**.")
+            label_risiko = "✅ Manfaat Tubuh Ideal"
+            risiko = ["Stamina lebih tinggi", "Kualitas tidur lebih baik", "Jantung lebih kuat", "Metabolisme sangat optimal"]
             tips = ["Pertahankan pola makan bergizi", "Olahraga 150 menit/minggu", "Cek kesehatan rutin", "Minum air putih cukup"]
             color_bar = 0.5
             
         elif 25 <= bmi < 30:
             kat = "Gemuk (Overweight)"
-            st.info("ℹ️ **Informasi:** Anda sedikit di atas berat badan ideal. Mulailah mengatur pola makan dan aktivitas fisik.")
+            selisih = st.session_state.berat - berat_ideal_max
+            st.info(f"ℹ️ **Target:** Anda perlu menurunkan berat badan sekitar **{selisih:.1f} kg** untuk mencapai berat ideal ({berat_ideal_max:.1f} kg).")
             risiko = ["Tekanan darah tinggi", "Kadar kolesterol naik", "Risiko Diabetes tipe 2", "Nyeri sendi"]
-            tips = ["Kurangi gula & gorengan", "Perbanyak jalan kaki", "Ganti karbohidrat ke serat (gandum/sayur)", "Puasa berkala"]
+            tips = ["Kurangi gula & gorengan", "Perbanyak jalan kaki", "Ganti karbohidrat ke serat", "Puasa berkala (Intermittent Fasting)"]
             color_bar = 0.75
             
         else:
             kat = "Obesitas"
-            st.error("🚨 **Peringatan Kritis:** Anda berada dalam kategori Obesitas. Hal ini sangat berisiko bagi kesehatan jantung. Segera konsultasikan ke dokter.")
+            selisih = st.session_state.berat - berat_ideal_max
+            st.error(f"🚨 **Target Kritis:** Anda harus menurunkan minimal **{selisih:.1f} kg** untuk keluar dari zona obesitas.")
             risiko = ["Serangan jantung/Stroke", "Penyumbatan pembuluh darah", "Sleep apnea", "Gagal ginjal"]
-            tips = ["Konsultasi dengan dokter/ahli gizi", "Defisit kalori secara ketat", "Olahraga rendah benturan (renang)", "Hindari minuman manis"]
+            tips = ["Konsultasi dengan dokter/ahli gizi", "Defisit kalori secara ketat", "Olahraga rendah benturan (renang)", "Hindari minuman manis total"]
             color_bar = 1.0
 
         # Tampilan Kategori & Progress Bar
@@ -132,7 +139,7 @@ elif selected == "Hasil Perhitungan":
         col1, col2 = st.columns(2)
         
         with col1:
-            with st.expander("⚠️ Risiko Kesehatan", expanded=True):
+            with st.expander(label_risiko, expanded=True):
                 for r in risiko:
                     st.markdown(f"<p style='margin:0; font-size:13px;'>• {r}</p>", unsafe_allow_html=True)
         
