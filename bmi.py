@@ -1,29 +1,29 @@
 import streamlit as st
-from streamlit_option_menu import option_menu
 
 # 1. Konfigurasi Halaman
 st.set_page_config(page_title="Smart BMI Calculator", page_icon="⚖️", layout="centered")
 
-# 2. CSS ANTI-DARK MODE & STYLING
+# 2. Inisialisasi Status Halaman
+if 'step' not in st.session_state:
+    st.session_state.step = "input"
+
+# 3. CSS CUSTOM
 st.markdown("""
     <style>
     .stApp { background-color: white !important; }
     h1, h2, h3, h4, p, span, label, li, div { color: #000000 !important; }
 
-    .header-container {
+    .header-box {
         display: flex;
         align-items: center;
         gap: 15px;
-        padding: 15px;
-        border: 1px solid #eeeeee;
+        padding: 20px;
+        background-color: #f8f9fa;
         border-radius: 15px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-        margin-bottom: 20px;
+        border: 1px solid #eeeeee;
+        margin-bottom: 25px;
     }
-    .header-container img { width: 60px; height: auto; }
-    .header-container h2 { margin: 0; font-size: 22px; font-weight: bold; }
-
-    [data-testid="stSidebar"] { display: none; }
+    .header-box img { width: 60px; height: auto; }
     
     .stButton>button {
         width: 100%;
@@ -31,122 +31,138 @@ st.markdown("""
         background-color: #007bff;
         color: white !important;
         font-weight: bold;
+        border: none;
+        padding: 12px;
+    }
+    
+    .quote-box {
+        padding: 15px;
+        border-radius: 10px;
+        border-left: 5px solid #007bff;
+        background-color: #f0f7ff;
+        font-style: italic;
+        margin-bottom: 20px;
+    }
+
+    .bmi-bar-container {
+        width: 100%;
+        background-color: #eee;
+        border-radius: 10px;
+        height: 12px;
+        display: flex;
+        overflow: hidden;
+        margin: 10px 0;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# 3. HEADER
-st.markdown("""
-    <div class="header-container">
-        <img src="https://cdn-icons-png.flaticon.com/512/3843/3843184.png">
-        <h2>Menu Utama</h2>
-    </div>
+# --- HALAMAN 1: INPUT DATA ---
+if st.session_state.step == "input":
+    st.markdown("""
+        <div class="header-box">
+            <img src="https://cdn-icons-png.flaticon.com/512/3843/3843184.png">
+            <div>
+                <h2 style="margin:0;">Smart BMI Tracker</h2>
+                <p style="margin:0; font-size:14px; color:#666 !important;">Analisis tubuh Anda secara instan</p>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with st.container(border=True):
+        berat = st.number_input("Berat Badan (kg)", min_value=1.0, value=60.0, step=0.1)
+        tinggi = st.number_input("Tinggi Badan (cm)", min_value=1.0, value=160.0, step=0.1)
+        gender = st.selectbox("Jenis Kelamin", ["Laki-laki", "Perempuan"])
+        
+        st.write("")
+        if st.button("Hitung Sekarang ✨"):
+            st.session_state.berat = berat
+            st.session_state.tinggi = tinggi
+            st.session_state.step = "hasil"
+            st.rerun()
+
+# --- HALAMAN 2: HASIL ---
+elif st.session_state.step == "hasil":
+    st.markdown("""
+        <div class="header-box">
+            <img src="https://cdn-icons-png.flaticon.com/512/3843/3843204.png">
+            <h2 style="margin:0;">Hasil Analisis</h2>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    tinggi_m = st.session_state.tinggi / 100
+    bmi = st.session_state.berat / (tinggi_m ** 2)
+    berat_min = 18.5 * (tinggi_m ** 2)
+    berat_max = 24.9 * (tinggi_m ** 2)
+    air_minum = st.session_state.berat * 0.033
+    
+    # Kotak Skor Utama
+    st.markdown(f"""
+        <div style="padding:25px; border-radius:20px; background:#ffffff; text-align:center; border:1px solid #eee; box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin-bottom: 25px;">
+            <p style="margin:0; color:#888; font-weight:500;">Skor BMI Anda</p>
+            <h1 style="margin:0; color:#007bff; font-size:65px;">{bmi:.1f}</h1>
+        </div>
     """, unsafe_allow_html=True)
 
-# 4. MENU NAVIGASI
-selected = option_menu(
-    menu_title=None, 
-    options=["Input Data", "Hasil Perhitungan"],
-    icons=['pencil-square', 'activity'],
-    default_index=0,
-    orientation="horizontal",
-    styles={
-        "container": {"padding": "0!important", "background-color": "#f8f9fa", "border-radius": "10px"},
-        "nav-link": {"font-size": "14px", "text-align": "center", "color": "#333"},
-        "nav-link-selected": {"background-color": "#007bff", "color": "white !important"},
-    }
-)
+    # Dashboard Angka Ideal
+    m1, m2 = st.columns(2)
+    m1.metric("Kebutuhan Air", f"{air_minum:.1f} L/Hari")
+    m2.metric("Rentang Ideal", f"{berat_min:.0f}-{berat_max:.0f} kg")
 
-st.divider()
-
-# --- HALAMAN 1: INPUT DATA ---
-if selected == "Input Data":
-    st.markdown("<h3 style='text-align: center;'>📝 Form Input Data</h3>", unsafe_allow_html=True)
-    
-    berat = st.number_input("Berat Badan (kg)", min_value=1.0, value=60.0, step=0.1)
-    tinggi = st.number_input("Tinggi Badan (cm)", min_value=1.0, value=165.0, step=0.1)
-    gender = st.selectbox("Jenis Kelamin", ["Laki-laki", "Perempuan"])
-    
-    if st.button("Hitung Sekarang ✨"):
-        st.session_state.berat = berat
-        st.session_state.tinggi = tinggi
-        st.session_state.gender = gender
-        st.success("✅ Data tersimpan! Silakan klik menu 'Hasil Perhitungan' di atas.")
-
-# --- HALAMAN 2: HASIL ANALISIS ---
-elif selected == "Hasil Perhitungan":
-    st.markdown("<h3 style='text-align: center;'>📊 Hasil Perhitungan BMI</h3>", unsafe_allow_html=True)
-    
-    if "berat" not in st.session_state:
-        st.info("💡 Isi data di menu 'Input Data' terlebih dahulu.")
+    # Logika Kategori (Risiko/Manfaat & Tips 5 Poin)
+    is_normal = False
+    if bmi < 18.5:
+        kat, color, bar_w = "Underweight", "#f39c12", "20%"
+        msg = f"Anda perlu naik sekitar **{berat_min - st.session_state.berat:.1f} kg** untuk ideal."
+        quote = "Jangan cuma asal makan! Fokus pada nutrisi berkualitas agar tubuhmu jadi lebih berisi, kuat, dan bertenaga!"
+        info_list = ["Sistem imun tubuh melemah", "Risiko anemia & kurang darah", "Kepadatan tulang menurun", "Gangguan pertumbuhan rambut/kuku", "Mudah merasa lelah & lemas"]
+        tips = ["Tambah asupan protein & karbo", "Makan porsi kecil namun sering", "Konsumsi camilan sehat (kacang/buah)", "Latihan beban untuk masa otot", "Pastikan istirahat cukup 7-8 jam"]
+        
+    elif 18.5 <= bmi < 25:
+        kat, color, bar_w = "Normal (Ideal)", "#27ae60", "50%"
+        is_normal = True
+        st.balloons()
+        msg = "Selamat! Berat badan Anda sudah berada di titik **Sangat Ideal**."
+        quote = "Mempertahankan itu hebat! Pertahankan pola hidup sehatmu sebagai investasi jangka panjang!"
+        info_list = ["Kinerja jantung lebih efisien", "Kualitas tidur lebih nyenyak", "Risiko penyakit kronis sangat rendah", "Metabolisme tubuh sangat lancar", "Mood lebih stabil & ceria"]
+        tips = ["Jaga pola makan gizi seimbang", "Olahraga rutin 150 menit/minggu", "Cukupi hidrasi air putih harian", "Kelola stres dengan meditasi", "Cek kesehatan secara berkala"]
+        
+    elif 25 <= bmi < 30:
+        kat, color, bar_w = "Overweight", "#2980b9", "75%"
+        msg = f"Anda perlu turun sekitar **{st.session_state.berat - berat_max:.1f} kg** untuk ideal."
+        quote = "Nggak perlu drastis, yang penting rutin! Setiap pilihan sehatmu hari ini adalah langkah nyata menuju badan ideal!"
+        info_list = ["Tekanan darah mulai meningkat", "Beban berlebih pada sendi lutut", "Risiko kolesterol tinggi", "Napas terasa lebih pendek", "Mudah lelah saat beraktivitas"]
+        tips = ["Kurangi asupan gula & gorengan", "Jalan kaki minimal 10.000 langkah", "Perbanyak serat dari sayuran", "Hindari makan sebelum tidur", "Lakukan intermittent fasting"]
+        
     else:
-        # Perhitungan Skor BMI
-        tinggi_m = st.session_state.tinggi / 100
-        bmi = st.session_state.berat / (tinggi_m ** 2)
-        
-        # Hitung Batas Berat Ideal (BMI 18.5 - 24.9)
-        berat_ideal_min = 18.5 * (tinggi_m ** 2)
-        berat_ideal_max = 24.9 * (tinggi_m ** 2)
-        
-        # Display Skor BMI
-        st.markdown(f"""
-            <div style="padding:20px; border-radius:15px; background:#ffffff; text-align:center; border:1px solid #eee; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px;">
-                <p style="margin:0; color:#888;">Skor BMI Anda</p>
-                <h1 style="margin:0; color:#007bff; font-size:50px;">{bmi:.1f}</h1>
-            </div>
-        """, unsafe_allow_html=True)
+        kat, color, bar_w = "Obesitas", "#e74c3c", "100%"
+        msg = f"Turunkan minimal **{st.session_state.berat - berat_max:.1f} kg** demi kesehatan."
+        quote = "Jangan lihat jauhnya, mulai saja dulu! Setiap perubahan kecil adalah kemenangan untuk kesehatanmu di masa depan!"
+        info_list = ["Risiko serangan jantung & stroke", "Gangguan napas saat tidur", "Diabetes melitus tipe 2", "Masalah mobilitas & pergerakan", "Beban organ dalam terlalu berat"]
+        tips = ["Konsultasi dengan ahli gizi", "Terapkan defisit kalori disiplin", "Olahraga ringan rendah benturan", "Hapus makanan olahan (junk food)", "Siapkan jadwal makan yang ketat"]
 
-        # Logika Kategori & Saran Berat
-        label_risiko = "⚠️ Risiko Kesehatan"
-        
-        if bmi < 18.5:
-            kat = "Kurus (Underweight)"
-            selisih = berat_ideal_min - st.session_state.berat
-            st.warning(f"⚠️ **Target:** Anda perlu menaikkan berat badan sekitar **{selisih:.1f} kg** untuk mencapai berat ideal ({berat_ideal_min:.1f} kg).")
-            risiko = ["Kekurangan nutrisi", "Sistem imun lemah", "Anemia", "Kepadatan tulang rendah"]
-            tips = ["Makan porsi kecil tapi sering", "Tambah asupan protein", "Pilih camilan padat kalori", "Olahraga angkat beban"]
-            color_bar = 0.2
-            
-        elif 18.5 <= bmi < 25:
-            kat = "Normal (Ideal)"
-            st.success(f"🌟 **Hebat!** Berat badan Anda sudah ideal. Pertahankan di rentang **{berat_ideal_min:.1f} kg - {berat_ideal_max:.1f} kg**.")
-            label_risiko = "✅ Manfaat Tubuh Ideal"
-            risiko = ["Stamina lebih tinggi", "Kualitas tidur lebih baik", "Jantung lebih kuat", "Metabolisme sangat optimal"]
-            tips = ["Pertahankan pola makan bergizi", "Olahraga 150 menit/minggu", "Cek kesehatan rutin", "Minum air putih cukup"]
-            color_bar = 0.5
-            
-        elif 25 <= bmi < 30:
-            kat = "Gemuk (Overweight)"
-            selisih = st.session_state.berat - berat_ideal_max
-            st.info(f"ℹ️ **Target:** Anda perlu menurunkan berat badan sekitar **{selisih:.1f} kg** untuk mencapai berat ideal ({berat_ideal_max:.1f} kg).")
-            risiko = ["Tekanan darah tinggi", "Kadar kolesterol naik", "Risiko Diabetes tipe 2", "Nyeri sendi"]
-            tips = ["Kurangi gula & gorengan", "Perbanyak jalan kaki", "Ganti karbohidrat ke serat", "Puasa berkala (Intermittent Fasting)"]
-            color_bar = 0.75
-            
-        else:
-            kat = "Obesitas"
-            selisih = st.session_state.berat - berat_ideal_max
-            st.error(f"🚨 **Target Kritis:** Anda harus menurunkan minimal **{selisih:.1f} kg** untuk keluar dari zona obesitas.")
-            risiko = ["Serangan jantung/Stroke", "Penyumbatan pembuluh darah", "Sleep apnea", "Gagal ginjal"]
-            tips = ["Konsultasi dengan dokter/ahli gizi", "Defisit kalori secara ketat", "Olahraga rendah benturan (renang)", "Hindari minuman manis total"]
-            color_bar = 1.0
+    # Bar Visual & Status
+    
+    st.write(f"**Status: <span style='color:{color}'>{kat}</span>**", unsafe_allow_html=True)
+    st.markdown(f'<div class="bmi-bar-container"><div style="width: {bar_w}; background-color: {color}; transition: width 1s;"></div></div>', unsafe_allow_html=True)
+    
+    st.info(msg)
+    st.markdown(f'<div class="quote-box">{quote}</div>', unsafe_allow_html=True)
 
-        # Tampilan Kategori & Progress Bar
-        st.markdown(f"**Kategori Saat Ini: {kat}**")
-        st.progress(color_bar)
+    # Info Detail (Expander)
+    c1, c2 = st.columns(2)
+    with c1:
+        header = "✨ Manfaat Tubuh Ideal" if is_normal else "⚠️ Risiko Kesehatan"
+        with st.expander(header, expanded=True):
+            for item in info_list: st.write(f"• {item}")
+    with c2:
+        with st.expander("💡 Tips Langkah Sehat", expanded=True):
+            for t in tips: st.write(f"• {t}")
 
-        # Tampilan Detail Risiko dan Tips dalam Expander
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            with st.expander(label_risiko, expanded=True):
-                for r in risiko:
-                    st.markdown(f"<p style='margin:0; font-size:13px;'>• {r}</p>", unsafe_allow_html=True)
-        
-        with col2:
-            with st.expander("💡 Tips Kesehatan", expanded=True):
-                for t in tips:
-                    st.markdown(f"<p style='margin:0; font-size:13px;'>• {t}</p>", unsafe_allow_html=True)
+    st.divider()
 
-# Footer
-st.markdown("<br><p style='text-align: center; color: #ccc; font-size: 10px;'>© 2025 BMI Tracker Pro</p>", unsafe_allow_html=True)
+    # Tombol Reset
+    if st.button("⬅️ Hitung Ulang Data Baru"):
+        st.session_state.step = "input"
+        st.rerun()
+
+st.markdown("<p style='text-align: center; color: #bbb; font-size: 11px; margin-top:50px;'>© 2025 Smart BMI Tracker Pro</p>", unsafe_allow_html=True)
